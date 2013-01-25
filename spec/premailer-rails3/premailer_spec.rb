@@ -16,11 +16,21 @@ describe PremailerRails::Premailer do
       end
 
       describe '#to_inline_css' do
-        it 'should return the HTML with the CSS inlined' do
-          PremailerRails::CSSHelper.stubs(:css_for_doc).returns('p { color: red; }')
-          html = Fixtures::Message::HTML_PART
-          premailer = PremailerRails::Premailer.new(html)
-          premailer.to_inline_css.should include '<p style="color: red;">'
+        context 'when inline CSS block present' do
+          it 'should return the HTML with the CSS inlined' do
+            PremailerRails::CSSHelper.stubs(:css_for_doc).returns('p { color: red; }')
+            html = Fixtures::Message::HTML_PART
+            premailer = PremailerRails::Premailer.new(html)
+            premailer.to_inline_css.should include '<p style="color: red;">'
+          end
+        end
+
+        context 'when CSS is loaded externally' do
+          it 'should return the HTML with the CSS inlined' do
+            html = Fixtures::Message::HTML_PART_WITH_CSS
+            premailer = PremailerRails::Premailer.new(html)
+            premailer.to_inline_css.should include '<p style="color: red;">'
+          end
         end
       end
     end
@@ -36,6 +46,13 @@ describe PremailerRails::Premailer do
       PremailerRails.config = { :foo => :bar }
       premailer = PremailerRails::Premailer.new('some html')
       premailer.instance_variable_get(:'@options')[:foo].should == :bar
+    end
+
+    it 'should not allow to override with_html_string' do
+      PremailerRails.config = { :with_html_string => false }
+      premailer = PremailerRails::Premailer.new('some html')
+      options = premailer.instance_variable_get(:'@options')
+      options[:with_html_string].should == true
     end
   end
 end

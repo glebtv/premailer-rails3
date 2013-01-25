@@ -19,6 +19,20 @@ describe PremailerRails::Hook do
         PremailerRails::Premailer.any_instance.expects(:to_inline_css)
         run_hook(message)
       end
+
+      it 'should not create a text part if disabled' do
+        PremailerRails::Premailer.any_instance.expects(:to_plain_text).never
+        PremailerRails.config[:generate_text_part] = false
+        run_hook(message)
+        PremailerRails.config[:generate_text_part] = true
+        message.text_part.should be_nil
+        message.html_part.should be_a Mail::Part
+      end
+
+      it 'should not create an additional html part' do
+        run_hook(message)
+        message.parts.count { |i| i.content_type =~ /text\/html/ }.should == 1
+      end
     end
 
     context 'when message contains html part and content-type is set to "multipart/mixed"' do
@@ -68,6 +82,16 @@ describe PremailerRails::Hook do
         PremailerRails::Premailer.any_instance.expects(:to_inline_css).returns("<html>body</html>")
         run_hook(message)
         message.body.should == "<html>body</html>"
+      end
+
+      it 'should not create a text part if disabled' do
+        PremailerRails::Premailer.any_instance.expects(:to_plain_text).never
+        PremailerRails.config[:generate_text_part] = false
+        run_hook(message)
+        PremailerRails.config[:generate_text_part] = true
+        message.text_part.should be_nil
+        message.html_part.should be_nil
+        message.body.should_not be_empty
       end
     end
 
